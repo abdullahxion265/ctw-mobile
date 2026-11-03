@@ -1,4 +1,4 @@
-import { parsePrice, formatMoney, formatItemPrice, priceFor, PRICE_ON_REQUEST } from '../currency';
+import { parsePrice, priceFor, formatMoney, formatItemPrice, PRICE_ON_REQUEST } from '../currency';
 
 describe('parsePrice', () => {
   test('parses two-decimal strings', () => {
@@ -31,16 +31,29 @@ describe('formatMoney', () => {
   });
 });
 
-describe('priceFor / formatItemPrice', () => {
-  const item = { price: 123500, price_mwk: 123500, price_zar: 1300 };
-  test('reads the right field per currency, never the legacy price', () => {
+// Mirrors the web shop's getPrice (client/src/utils/currency.js).
+describe('priceFor', () => {
+  test('reads the right field per currency', () => {
+    const item = { price: 123500, price_mwk: 123500, price_zar: 1300 };
     expect(priceFor(item, 'ZAR')).toBe(1300);
     expect(priceFor(item, 'MWK')).toBe(123500);
   });
-  test('missing Rand price is price on request', () => {
+
+  test('a missing Rand price is price on request, with no fallback', () => {
     const old = { price: 5000, price_mwk: 5000, price_zar: null };
     expect(priceFor(old, 'ZAR')).toBeNull();
     expect(formatItemPrice(old, 'ZAR')).toBe(PRICE_ON_REQUEST);
     expect(formatItemPrice(old, 'MWK')).toBe('MK5,000.00');
+  });
+
+  test('0.00 is not a price', () => {
+    expect(priceFor({ price_zar: 0, price_mwk: 0, price: 0 }, 'ZAR')).toBeNull();
+    expect(priceFor({ price_zar: 0, price_mwk: 0, price: 0 }, 'MWK')).toBeNull();
+  });
+
+  test('old rows with only the legacy price fall back to it for Kwacha', () => {
+    const legacy = { price: 8000, price_mwk: null, price_zar: null };
+    expect(priceFor(legacy, 'MWK')).toBe(8000);
+    expect(priceFor(legacy, 'ZAR')).toBeNull();
   });
 });

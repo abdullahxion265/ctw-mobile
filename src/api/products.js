@@ -17,21 +17,24 @@ function parseList(data, fallbackPage) {
   };
 }
 
-/** GET /products — one page. category 'all' (or empty) means no filter. */
-export async function fetchProducts({ category = 'all', page = 1, limit = PAGE_SIZE } = {}) {
+/**
+ * GET /products — one page. category and brand 'all' (or empty) mean no
+ * filter. The brand filter is an exact match on the product's brand.
+ */
+export async function fetchProducts({ category = 'all', brand = 'all', page = 1, limit = PAGE_SIZE } = {}) {
   const params = { limit };
   if (category && category !== 'all') params.category = category;
+  if (brand && brand !== 'all') params.brand = brand;
   if (page > 1) params.page = page;
   const { data } = await api.get('/products', { params });
   return parseList(data, page);
 }
 
-/** GET /products/picks — three random products for the home screen. */
-export async function fetchPicks() {
-  const { data } = await api.get('/products/picks');
-  const list = Array.isArray(data) ? data : data?.products;
-  if (!Array.isArray(list)) throw new BadResponseError();
-  return list.filter((p) => isObject(p) && p.id !== undefined).map(normalizeProduct);
+/** GET /products/brands — the distinct brands in use, sorted by the server. */
+export async function fetchBrands() {
+  const { data } = await api.get('/products/brands');
+  if (!Array.isArray(data)) throw new BadResponseError();
+  return data.filter((b) => typeof b === 'string' && b.trim()).map((b) => b.trim());
 }
 
 /** GET /products/:id */
@@ -60,25 +63,31 @@ export async function fetchProductsByIds(ids) {
 const ALL_TTL_MS = 5 * 60 * 1000;
 const allCache = new Map();
 
-export async function fetchAllProducts({ category = 'all', force = false } = {}) {
-  const key = category || 'all';
+export async function fetchAllProducts({ category = 'all', brand = 'all', force = false } = {}) {
+  const key = `${category || 'all'}|${brand || 'all'}`;
   const hit = allCache.get(key);
   if (!force && hit && Date.now() - hit.at < ALL_TTL_MS) return hit.products;
 
-  const first = await fetchProducts({ category: key, page: 1, limit: 50 });
+  const first = await fetchProducts({ category, brand, page: 1, limit: 50 });
   const products = [...first.products];
   for (let page = 2; page <= first.totalPages && page <= 20; page += 1) {
-    const next = await fetchProducts({ category: key, page, limit: 50 });
+    const next = await fetchProducts({ category, brand, page, limit: 50 });
     products.push(...next.products);
   }
   allCache.set(key, { at: Date.now(), products });
   return products;
 }
 
+// The web search matches name and brand; the app also matches description
+// and category, since it searches the whole catalogue rather than one page.
 export function filterBySearch(products, query) {
   const q = String(query || '').trim().toLowerCase();
   if (!q) return products;
   return products.filter(
-    (p) => p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q) || p.category.includes(q)
+    (p) =>
+      p.name.toLowerCase().includes(q) ||
+      p.brand.toLowerCase().includes(q) ||
+      p.description.toLowerCase().includes(q) ||
+      p.category.includes(q)
   );
 }

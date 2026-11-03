@@ -60,7 +60,7 @@ export function CartProvider({ children }) {
       const { items: merged, removed } = mergeFreshProducts(itemsRef.current, fresh);
       commitItems(merged);
       if (removed.length > 0) {
-        setNotices((prev) => [...prev, ...removed.map(removedNotice)]);
+        setNotices((prev) => [...prev, removedNotice(removed)]);
       }
     } catch {
       // offline, timeout or malformed body: keep the cart as is

@@ -11,19 +11,11 @@ document.
 
 ---
 
-## Before you run it: one required edit
+## WhatsApp number
 
-Open `src/config/env.js` and set the client's WhatsApp number:
-
-```js
-export const WHATSAPP_NUMBER = '27821234567'; // international format, digits only
-```
-
-The API does not expose the number, and the web build bakes it in, so the
-app needs it too. While it is empty, every "Order on WhatsApp" button
-shows a notice instead of opening WhatsApp. If you later add
-`GET /api/config` (see "Server additions"), the app picks the number up
-from there by itself and this value becomes the offline fallback.
+Set in `src/config/env.js` (`WHATSAPP_NUMBER`, international format, digits only).
+If the server later gets `GET /api/config` returning `{ "whatsapp_number": "..." }`, the app uses
+that instead and keeps this value as the offline fallback.
 
 ---
 
@@ -52,7 +44,6 @@ over HTTPS and native apps ignore CORS.
 
 | Tab | What it does |
 | --- | --- |
-| Home | Hero, category tiles, three random picks (pull to refresh for new ones), how ordering works |
 | Shop | Category chips, search, two-column grid, infinite scroll, pull to refresh, skeleton loaders |
 | Cart | Swipe to delete, quantity steppers, note box that rises with the keyboard, pinned total and WhatsApp button |
 | More | Currency, WhatsApp chat, website, about |
@@ -64,7 +55,10 @@ switch is a header pill and a bottom sheet, available on every screen.
 Rules carried over from the web shop, all in `src/utils/cart.js` and
 `src/utils/currency.js` as pure functions with unit tests:
 
-- Quantity 1 to 20 per line, at most 25 distinct lines, notes up to 300 characters.
+- Quantity 1 to 20 per line, at most 25 distinct lines, notes up to 300 characters. These rules and the
+  two WhatsApp messages now match the web source (`client/src/utils/cart.js`, `currency.js`,
+  `ProductModal.jsx`) line for line, including `Hi CarterTheTownWear!`, `(brand)` after each name and
+  `Total (ZAR): R... + items on request`.
 - Cart lines are snapshots. They are refreshed with
   `GET /products?ids=...&limit=50` on app start and every time the Cart
   tab opens: names and prices update, quantities stay, products that no
@@ -73,12 +67,13 @@ Rules carried over from the web shop, all in `src/utils/cart.js` and
 - Totals per currency. A product with no price in the chosen currency
   shows "Price on request", is left out of the total, and the cart says
   how many were left out.
-- Currency format: `R1,299.50` and `MK125,000.00`. Rand is the default;
-  the choice is remembered.
-- Branding: the UI only ever shows `CTW`. The API's `brand` field is
-  dropped when a product is parsed.
+- Currency format: `R1,299.50` and `MK125,000.00`. Rand is the default; the choice is remembered.
+  Like the web, a price of 0.00 counts as not set, and old rows with only the legacy `price` use it for Kwacha.
+- Brands: each product shows the brand the admin entered (blank means `CTW`, as on the server).
+  It appears on cards, the product screen, cart lines and in the WhatsApp messages, and there is a brand
+  filter in the Shop (`GET /products/brands`, `?brand=`). The brand row is hidden while only one brand exists.
 - The cart and its note survive restarts (AsyncStorage).
-- Offline: the last good product list and picks are cached on the device.
+- Offline: the last good product list is cached on the device.
   When a request fails, the app serves the cache with an "offline" banner.
   With nothing cached, it shows a calm retry screen, not an error wall.
 - Errors: the app never assumes a response body is JSON (a proxy can
@@ -98,7 +93,7 @@ ctw-mobile/
 └── src/
     ├── api/
     │   ├── client.js           axios instance, error helpers (no auth: customers have no accounts)
-    │   └── products.js         list / picks / one / by-ids / all-pages + client-side search
+    │   └── products.js         list / brands / one / by-ids / all-pages + client-side search
     ├── config/
     │   ├── env.js              site URL, WHATSAPP_NUMBER
     │   └── store.js            categories, default currency, page size
@@ -108,10 +103,9 @@ ctw-mobile/
     │   └── ConfigContext.js    WhatsApp number (env fallback, /api/config when it exists)
     ├── hooks/
     │   ├── useProductFeed.js   paging, search, offline fallback for Shop
-    │   ├── usePicks.js         home picks + cache
     │   └── useWhatsApp.js      shared WhatsApp handoff + failure modal
     ├── navigation/             RootNavigator (tabs + ProductDetail), TabNavigator
-    ├── screens/                Home, Shop, ProductDetail, Cart, More
+    ├── screens/                Shop, ProductDetail, Cart, More
     ├── components/             ProductCard, CartLine, CurrencySheet, buttons, skeletons, states
     ├── theme/theme.js          colours, fonts, spacing, radius, shadow
     └── utils/
@@ -137,36 +131,32 @@ family from `fonts` in `theme.js` instead.
 
 ---
 
-## Assumptions to confirm (the open questions from the handoff, section 10)
+## Brand assets
 
-These were settled with defaults so the app could be built. All are cheap to change.
+Taken from the web repo (`client/public/brand/`): `assets/icon.png` (navy 1024 icon), `adaptive-icon.png`
+(cream monogram on transparent; adaptive background `#0F294D`), `splash.png` (monogram), `logo-full.png`
+(loading screen) and `logo-mark.png` (More screen).
 
-1. **App name and ids.** Name "Carter The Town Wear", slug `ctw-mobile`,
-   Android package and iOS bundle id `com.carterthetownwear.app`. Change them in
-   `app.json` before the first store build; the Android package id cannot change after release.
-2. **Platforms.** Code is cross-platform and both ids are set. Only Android was
-   built and tested in the Zakumunda project; iOS needs an Apple Developer
-   account (question 6) before it can be built or published.
-3. **Admin area.** Not included. Customer-only for version 1, as the handoff describes.
-4. **Brand assets are placeholders.** The icon, adaptive icon, splash and in-app logo are a
-   gold "CTW" monogram on `#0D0D0D`, generated because no logo file was provided. Replace
-   `assets/icon.png`, `adaptive-icon.png`, `splash.png` and `logo.png` with the real logo
-   (keep the adaptive icon's artwork inside the centre 66%).
-5. **Search is client-side.** The server has no `?q=` yet, so a search loads every page
-   (50 per request, cached 5 minutes) and filters by name, description and category on the
-   device. Fine for a few hundred products. Replace `fetchAllProducts` use in
-   `useProductFeed.js` with a `?q=` call once the server supports it.
-6. **Message wording the doc did not specify.** The cart message is exactly the documented
-   format. Three details are my choice and should be matched against the web
-   `cart.js`: (a) a line with no price reads `2 x Price on request`, (b) a note
-   `N item(s) priced on request, not included in the total.` goes under the total, and (c) the
-   total line is omitted when every line is on request. The single-product message is:
-   `Hi CTW! I'm interested in:` / `*Name* (Category)` / `Price (ZAR): R1,200.00` / `Please confirm availability.`
-7. **Prices of 0.00** are treated as real prices, only null means "Price on request". If old rows
-   hold 0.00 instead of null, change `parsePrice` in `src/utils/currency.js`.
-8. **Leftover Kids rows** appear only under All. They are filtered out of category views and Home picks.
-9. **No push notifications, analytics or crash reporting** yet (questions 10, section 9).
-10. **No social links** on the More screen: none were given.
+The committed `android/` project was generated before these existed, so the launcher icons, the
+adaptive-icon background colour and the splash logo under `android/app/src/main/res/` were
+regenerated by hand from the same files. You do not need `expo prebuild` (which would overwrite your
+Android changes). A native rebuild is needed to see them: `npm run android`.
+
+If you ever re-generate `android/` with `npx expo prebuild --clean`, it will rebuild these from
+`assets/` and `app.json` by itself.
+
+---
+
+## Still assumptions
+
+1. **App name and ids.** "Carter The Town Wear", `com.carterthetownwear.app`. The Android package id
+   cannot change after a Play release.
+2. **Search is client-side.** The server still has no `?q=`, so a search loads the whole catalogue
+   (50 per request, cached 5 minutes) and filters by name, brand, description and category.
+3. **Brand row is hidden when there is only one brand**, to avoid a pointless "All brands / CTW" choice.
+   The web always shows it. Change `brandOptions` in `ShopScreen.js` if you want exact parity.
+4. **Leftover Kids rows** appear only under All, and are filtered out of category views.
+5. **No push notifications, analytics or social links** (the web has none either).
 
 ---
 
@@ -181,6 +171,33 @@ Nothing in the app needs a server change to work today. These make it better:
 - Image thumbnails if list screens feel heavy on mobile data.
 
 These go through your normal web-repo deploy routine (zip, migration step, `bash deploy/update.sh`).
+
+---
+
+## APK for client testing
+
+Your `android/` project builds a standalone release APK (JavaScript bundled inside, no dev server).
+PowerShell, from the project folder:
+
+```powershell
+cd android
+.\gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a
+```
+
+Result: `android\app\build\outputs\apk\release\app-release.apk`. `arm64-v8a` covers almost every
+phone from the last several years and builds only that one CPU type, which is much faster and gives a
+smaller file. If a client phone is old or 32-bit and the app will not install, build without the
+`-PreactNativeArchitectures` flag to get all four.
+
+Release builds here are signed with the debug keystore. That is fine for testing but cannot be uploaded
+to Google Play: for the store, create a real keystore (or use EAS, which manages one) first.
+Check `WHATSAPP_NUMBER` before building, because it is compiled in.
+
+To install: send the APK (WhatsApp, Drive, email), open it on the phone and allow "install unknown apps"
+for that app when asked. To update later, build again and install over it; keep `versionCode`
+in `android/app/build.gradle` higher than the installed one when doing so from a different machine.
+
+Cloud alternative: `eas build -p android --profile preview` produces an APK too.
 
 ---
 
@@ -206,25 +223,15 @@ set the real app name and package id.
 
 ## What was verified, and what was not
 
-Done from the build environment:
+- `npm test`: 37 unit tests pass (cart limits and refresh, totals, exact WhatsApp messages with
+  brands, price rules including 0.00 and the legacy Kwacha fallback, stored-cart recovery).
+- `expo export` bundles for Android and iOS.
+- A full-app render test (not shipped; needs `jest-expo`) ran the real app against a mocked API
+  shaped like the real one: quick add, Shop brand filter and its reset on category
+  change, search by brand, Kwacha fallback for old rows, the exact WhatsApp text for the cart and
+  for a single product, the offline retry state, and a saved cart refreshed with one combined
+  removal notice.
+- The new Android icons and splash were generated and eyeballed as images, not run on a device.
 
-- `npm test`: 31 unit tests pass (cart limits, totals, refresh and removal, exact WhatsApp
-  message, price parsing and formatting, stored-cart recovery, WhatsApp URLs).
-- `expo export` bundles cleanly for both Android and iOS through Metro (2,545 modules).
-- A full-app render test (not shipped; it needs `jest-expo`) drove the real app with a mocked API:
-  splash to Home, picks, "Price on request", category jump and filtering, search, product
-  detail, add to cart twice, cart total, the WhatsApp deep link and its decoded message, the
-  currency switch repricing everything, the offline retry state, and a persisted cart being
-  refreshed and a removed product dropped with its notice.
-
-Not tested, because there is no phone or emulator here:
-
-- Real layout, spacing, fonts and the look of the screens on a device.
-- Haptics, swipe-to-delete feel, the bottom sheet drag, pull to refresh.
-- Keyboard behaviour in the cart (notes box, pinned bar). Android edge-to-edge is switched on
-  in `app.json`, so the cart uses `KeyboardAvoidingView` with padding on both platforms.
-  Check this on a real Android phone first.
-- WhatsApp opening on a real device, with WhatsApp installed and not installed.
-- The live API: the app was built from the handoff contract, not run against the production server.
-- The web `cart.js` and `currency.js` were not available, so the cart rules follow the document,
-  not the source. Compare the two before release (see assumption 6).
+Not tested: anything on a real phone (layout, fonts, haptics, swipe, sheet drag, keyboard in the
+cart), WhatsApp opening on a device, and the live API.

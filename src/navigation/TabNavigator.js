@@ -1,19 +1,18 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Home, LayoutGrid, ShoppingBag, MoreHorizontal } from 'lucide-react-native';
+import { LayoutGrid, ShoppingBag, MoreHorizontal } from 'lucide-react-native';
 import { colors, fonts } from '../theme/theme';
 import { useCart } from '../context/CartContext';
 import { hapticSelect } from '../utils/haptics';
 
-import HomeScreen from '../screens/HomeScreen';
 import ShopScreen from '../screens/ShopScreen';
 import CartScreen from '../screens/CartScreen';
 import MoreScreen from '../screens/MoreScreen';
 
 const Tab = createBottomTabNavigator();
 
-// Home, Shop, Cart, More. Cart gets a badge with the total unit count.
+// Shop, Cart, More. Cart gets a badge with the total unit count.
 // The bar height follows the device's bottom inset, so it clears the iOS
 // home indicator and Android gesture/nav bar instead of using a fixed
 // height that fits only some phones.
@@ -23,7 +22,7 @@ export default function TabNavigator() {
 
   return (
     <Tab.Navigator
-      initialRouteName="HomeTab"
+      initialRouteName="ShopTab"
       screenListeners={{ tabPress: () => hapticSelect() }}
       screenOptions={{
         headerShown: false,
@@ -37,11 +36,6 @@ export default function TabNavigator() {
         tabBarLabelStyle: styles.tabLabel,
       }}
     >
-      <Tab.Screen
-        name="HomeTab"
-        component={HomeScreen}
-        options={{ title: 'Home', tabBarIcon: ({ color, size }) => <Home color={color} size={size} /> }}
-      />
       <Tab.Screen
         name="ShopTab"
         component={ShopScreen}

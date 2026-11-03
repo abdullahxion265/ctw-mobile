@@ -3,7 +3,7 @@ import { fetchProducts, fetchAllProducts, filterBySearch } from '../api/products
 import { isNetworkError } from '../api/client';
 import { readCache, writeCache } from '../utils/cache';
 
-const cacheKey = (category) => `ctw.cache.products.${category}`;
+const cacheKey = (category, brand) => `ctw.cache.products.${category}.${brand}`;
 const EMPTY = { products: [], page: 0, totalPages: 1, status: 'loading', offline: false };
 
 // Under a specific category, show only that category. Under "all", show
@@ -17,13 +17,13 @@ const inCategory = (products, category) =>
  * refresh, search and the offline fallback.
  *
  * - No query: pages of 12 from GET /products, appended on scroll.
- * - Query: the full catalogue (cached for 5 minutes) filtered on the
- *   device, because the server has no ?q= yet.
+ * - Query: the full catalogue for the chosen category and brand (cached
+ *   for 5 minutes) filtered on the device, because the server has no ?q= yet.
  * - If a load fails, the last good first page is served from the
  *   on-device cache with `offline: true`; only when there is nothing
  *   cached does the screen get status 'error'.
  */
-export function useProductFeed({ category, query }) {
+export function useProductFeed({ category, brand = 'all', query }) {
   const [state, setState] = useState(EMPTY);
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -31,7 +31,7 @@ export function useProductFeed({ category, query }) {
   const requestId = useRef(0);
   const stateRef = useRef(state);
   stateRef.current = state;
-  const prevCategory = useRef(category);
+  const prevFilters = useRef(`${category}|${brand}`);
 
   const load = useCallback(
     async ({ refresh = false } = {}) => {
@@ -40,18 +40,18 @@ export function useProductFeed({ category, query }) {
       try {
         let next;
         if (query) {
-          const all = await fetchAllProducts({ category, force: refresh });
+          const all = await fetchAllProducts({ category, brand, force: refresh });
           next = { products: inCategory(filterBySearch(all, query), category), page: 1, totalPages: 1 };
         } else {
-          const res = await fetchProducts({ category, page: 1 });
+          const res = await fetchProducts({ category, brand, page: 1 });
           next = { products: inCategory(res.products, category), page: res.page, totalPages: res.totalPages };
-          writeCache(cacheKey(category), next);
+          writeCache(cacheKey(category, brand), next);
         }
         if (id !== requestId.current) return;
         setState({ ...next, status: 'ready', offline: false });
       } catch (err) {
         if (id !== requestId.current) return;
-        const cached = await readCache(cacheKey(category));
+        const cached = await readCache(cacheKey(category, brand));
         if (id !== requestId.current) return;
         if (cached && Array.isArray(cached.products) && cached.products.length > 0) {
           const list = query ? filterBySearch(cached.products, query) : cached.products;
@@ -66,18 +66,19 @@ export function useProductFeed({ category, query }) {
         }
       }
     },
-    [category, query]
+    [category, brand, query]
   );
 
   useEffect(() => {
-    // A new category starts from a clean skeleton; a new search keeps
-    // the previous results on screen until the new ones arrive.
-    if (prevCategory.current !== category) {
-      prevCategory.current = category;
+    // A new category or brand starts from a clean skeleton; a new search
+    // keeps the previous results on screen until the new ones arrive.
+    const filters = `${category}|${brand}`;
+    if (prevFilters.current !== filters) {
+      prevFilters.current = filters;
       setState(EMPTY);
     }
     load();
-  }, [load, category]);
+  }, [load, category, brand]);
 
   const reload = useCallback(() => {
     setRefreshing(true);
@@ -95,7 +96,7 @@ export function useProductFeed({ category, query }) {
     const id = requestId.current;
     setLoadingMore(true);
     try {
-      const res = await fetchProducts({ category, page: s.page + 1 });
+      const res = await fetchProducts({ category, brand, page: s.page + 1 });
       if (id !== requestId.current) return;
       setState((prev) => {
         const seen = new Set(prev.products.map((p) => String(p.id)));
@@ -107,7 +108,7 @@ export function useProductFeed({ category, query }) {
     } finally {
       setLoadingMore(false);
     }
-  }, [category, query, loadingMore]);
+  }, [category, brand, query, loadingMore]);
 
   return {
     products: state.products,

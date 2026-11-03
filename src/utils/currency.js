@@ -1,9 +1,10 @@
 // Price parsing and formatting. Pure functions, no React Native imports,
-// so they are unit-tested under plain Jest.
+// so they are unit-tested under plain Jest. Rules mirror the web shop's
+// client/src/utils/currency.js.
 
 export const CURRENCIES = {
-  ZAR: { code: 'ZAR', symbol: 'R', name: 'South African Rand', field: 'price_zar' },
-  MWK: { code: 'MWK', symbol: 'MK', name: 'Malawian Kwacha', field: 'price_mwk' },
+  ZAR: { code: 'ZAR', symbol: 'R', name: 'South African Rand', shortName: 'Rand', field: 'price_zar' },
+  MWK: { code: 'MWK', symbol: 'MK', name: 'Malawian Kwacha', shortName: 'Kwacha', field: 'price_mwk' },
 };
 
 export const CURRENCY_CODES = Object.keys(CURRENCIES);
@@ -16,8 +17,7 @@ export function isCurrencyCode(value) {
 
 /**
  * The API returns prices as strings with two decimals ("1300.00") and
- * null where a price was never set (older products have no Rand price).
- * Returns a finite number, or null when there is no usable price.
+ * null where a price was never set. Returns a finite number, or null.
  */
 export function parsePrice(value) {
   if (value === null || value === undefined || value === '') return null;
@@ -25,10 +25,20 @@ export function parsePrice(value) {
   return Number.isFinite(n) ? n : null;
 }
 
-/** Price of a product in a currency, or null if the admin never set one. */
+/**
+ * Price of a product in a currency, or null when there is none.
+ * Same as the web's getPrice:
+ *  - a price must be greater than 0 (0.00 counts as "not set")
+ *  - rows from before the dual-currency migration only have the legacy
+ *    Kwacha `price`, so MWK falls back to it when price_mwk is empty
+ *  - there is no such fallback for Rand
+ */
 export function priceFor(item, currency) {
-  const field = (CURRENCIES[currency] || CURRENCIES.ZAR).field;
-  return parsePrice(item?.[field]);
+  const { field } = CURRENCIES[currency] || CURRENCIES.ZAR;
+  let raw = item?.[field];
+  if ((raw === null || raw === undefined) && currency === 'MWK') raw = item?.price;
+  const n = parsePrice(raw);
+  return n !== null && n > 0 ? n : null;
 }
 
 /**

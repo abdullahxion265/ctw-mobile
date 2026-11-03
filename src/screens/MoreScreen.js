@@ -7,7 +7,7 @@ import { useCurrency } from '../context/CurrencyContext';
 import { useWhatsApp } from '../hooks/useWhatsApp';
 import { CURRENCIES } from '../utils/currency';
 import { hapticSelect } from '../utils/haptics';
-import { SITE_ORIGIN, APP_NAME } from '../config/env';
+import { SITE_ORIGIN, APP_NAME, SHOP_NAME } from '../config/env';
 
 function Row({ icon, title, subtitle, onPress, last }) {
   return (
@@ -42,7 +42,7 @@ export default function MoreScreen() {
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.header}>
-        <Image source={require('../../assets/logo.png')} style={styles.logo} resizeMode="contain" />
+        <Image source={require('../../assets/logo-mark.png')} style={styles.logo} resizeMode="contain" />
         <Text style={styles.title}>{APP_NAME}</Text>
       </View>
 
@@ -69,7 +69,7 @@ export default function MoreScreen() {
             icon={<MessageCircle size={19} color={colors.gold} />}
             title="Chat on WhatsApp"
             subtitle="Questions, sizes, availability"
-            onPress={() => sendWhatsApp('Hi CTW! I have a question.')}
+            onPress={() => sendWhatsApp(`Hi ${SHOP_NAME}! I have a question.`)}
           />
           <Row
             last
@@ -104,7 +104,7 @@ export default function MoreScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.bg },
   header: { alignItems: 'center', paddingVertical: spacing.xl },
-  logo: { width: 96, height: 96, marginBottom: spacing.sm },
+  logo: { width: 64, height: 80, marginBottom: spacing.md },
   title: { fontFamily: fonts.heading, fontSize: 24, color: colors.textPrimary },
   section: { paddingHorizontal: spacing.lg, marginTop: spacing.xl },
   sectionLabel: { ...typography.label, color: colors.gold, marginBottom: spacing.sm, marginLeft: 4 },

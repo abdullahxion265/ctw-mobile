@@ -17,7 +17,7 @@ import { useCart } from '../context/CartContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { useWhatsApp } from '../hooks/useWhatsApp';
 import { computeTotals, buildOrderMessage, MAX_NOTES_LENGTH } from '../utils/cart';
-import { formatMoney } from '../utils/currency';
+import { formatMoney, CURRENCIES } from '../utils/currency';
 import { hapticWarning } from '../utils/haptics';
 import CartLine from '../components/CartLine';
 import CurrencyPill from '../components/CurrencyPill';
@@ -124,13 +124,13 @@ export default function CartScreen() {
               ListHeaderComponent={renderNotices()}
               ListFooterComponent={
                 <View style={styles.notesBlock}>
-                  <Text style={styles.notesLabel}>Note</Text>
+                  <Text style={styles.notesLabel}>Sizes, colours or notes</Text>
                   <TextInput
                     style={styles.notesInput}
                     value={notes}
                     onChangeText={setNotes}
                     onFocus={() => setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 250)}
-                    placeholder="Sizes, colours or notes"
+                    placeholder="e.g. Hoodie: L, black. Shoes: size 9"
                     placeholderTextColor={colors.textMuted}
                     multiline
                     maxLength={MAX_NOTES_LENGTH}
@@ -156,7 +156,7 @@ export default function CartScreen() {
               </View>
               {onRequestLines > 0 ? (
                 <Text style={styles.onRequest}>
-                  {onRequestLines} {onRequestLines === 1 ? 'item is' : 'items are'} priced on request and not included in the total.
+                  {onRequestLines} item{onRequestLines > 1 ? 's' : ''} priced on request in {CURRENCIES[currency].shortName}, not included above.
                 </Text>
               ) : null}
               <PrimaryButton

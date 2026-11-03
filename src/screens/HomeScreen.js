@@ -1,13 +1,15 @@
 import { useState, useCallback } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl, Dimensions } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl, Dimensions, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ArrowRight, ArrowUpRight } from 'lucide-react-native';
+import { ArrowRight, ArrowUpRight, RefreshCw } from 'lucide-react-native';
 import { colors, fonts, radius, spacing, typography } from '../theme/theme';
 import { CATEGORIES } from '../config/store';
 import { useCurrency } from '../context/CurrencyContext';
 import { usePicks } from '../hooks/usePicks';
+import { useQuickAdd } from '../hooks/useQuickAdd';
+import { APP_TAGLINE } from '../config/env';
 import { hapticTap } from '../utils/haptics';
 import ProductCard from '../components/ProductCard';
 import { ProductCardSkeleton } from '../components/Skeleton';
@@ -35,6 +37,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { currency } = useCurrency();
   const { picks, status, offline, reload } = usePicks();
+  const { quickAdd, quickAddModal } = useQuickAdd();
   const [refreshing, setRefreshing] = useState(false);
 
   const goShop = (category = 'all') => {
@@ -65,13 +68,14 @@ export default function HomeScreen() {
       </View>
 
       <LinearGradient colors={['#231E0F', '#151515', colors.bg]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
-        <Text style={styles.heroTag}>Carter The Town Wear</Text>
-        <Text style={styles.heroTitle}>Dress for{'\n'}the town.</Text>
+        <Text style={styles.heroTag}>New Season Collection</Text>
+        <Image source={require('../../assets/logo-full.png')} style={styles.heroLogo} resizeMode="contain" accessibilityLabel="Carter The Town Wear" />
+        <Text style={styles.heroTagline}>{APP_TAGLINE}</Text>
         <Text style={styles.heroBody}>
           Men, women, hoodies, caps and shoes. Build a cart and send your order to us on WhatsApp.
         </Text>
         <PrimaryButton
-          label="Shop the collection"
+          label="Browse Collection"
           onPress={() => goShop('all')}
           fullWidth={false}
           icon={<ArrowRight size={17} color={colors.onGold} />}
@@ -102,7 +106,16 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.section}>
-        <SectionHeading eyebrow="Picks" title="Three to start with" />
+        <SectionHeading
+          eyebrow="Curated Daily"
+          title="Our Picks Today"
+          action={
+            <TouchableOpacity style={styles.refreshBtn} onPress={reload} activeOpacity={0.75} accessibilityRole="button" accessibilityLabel="Refresh picks">
+              <RefreshCw size={13} color={colors.gold} />
+              <Text style={styles.refreshText}>Refresh</Text>
+            </TouchableOpacity>
+          }
+        />
       </View>
       {offline && picks.length > 0 ? <OfflineBanner onRetry={reload} label="You're offline. Showing saved picks." /> : null}
       {status === 'error' ? (
@@ -122,7 +135,9 @@ export default function HomeScreen() {
         >
           {status === 'loading'
             ? [0, 1, 2].map((i) => <ProductCardSkeleton key={i} width={PICK_WIDTH} />)
-            : picks.map((p) => <ProductCard key={p.id} product={p} currency={currency} onPress={openProduct} width={PICK_WIDTH} />)}
+            : picks.map((p) => (
+                <ProductCard key={p.id} product={p} currency={currency} onPress={openProduct} onAdd={quickAdd} width={PICK_WIDTH} />
+              ))}
         </ScrollView>
       )}
 
@@ -140,6 +155,7 @@ export default function HomeScreen() {
           ))}
         </View>
       </View>
+      {quickAddModal}
     </ScrollView>
   );
 }
@@ -158,8 +174,9 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xxl,
     overflow: 'hidden',
   },
-  heroTag: { ...typography.label, color: colors.gold, marginBottom: spacing.md },
-  heroTitle: { fontFamily: fonts.heading, fontSize: 40, lineHeight: 46, color: colors.textPrimary },
+  heroTag: { ...typography.label, color: colors.gold, marginBottom: spacing.lg },
+  heroLogo: { width: 250, height: 202, marginLeft: -6 },
+  heroTagline: { fontFamily: fonts.headingItalic, fontSize: 19, color: colors.textSecondary, marginTop: spacing.sm },
   heroBody: { fontFamily: fonts.body, fontSize: 14.5, lineHeight: 22, color: colors.textSecondary, marginTop: spacing.md },
   section: { paddingHorizontal: spacing.lg, marginTop: spacing.xxl },
   tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: TILE_GAP },
@@ -176,6 +193,17 @@ const styles = StyleSheet.create({
   tileIndex: { fontFamily: fonts.mono, fontSize: 11, letterSpacing: 1.4, color: colors.textMuted },
   tileFoot: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   tileLabel: { fontFamily: fonts.heading, fontSize: 17, color: colors.textPrimary },
+  refreshBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  refreshText: { fontFamily: fonts.bodyMedium, fontSize: 12.5, color: colors.gold },
   picksRow: { paddingHorizontal: spacing.lg, gap: spacing.md },
   picksError: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.lg },
   picksErrorText: { fontFamily: fonts.body, fontSize: 13.5, color: colors.textMuted },

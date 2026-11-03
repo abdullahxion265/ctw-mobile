@@ -1,12 +1,14 @@
-import { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, RefreshControl, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { View, Text, StyleSheet, FlatList, TextInput, RefreshControl, ActivityIndicator, TouchableOpacity, Image } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Search, SearchX, X } from 'lucide-react-native';
-import { colors, fonts, radius, spacing } from '../theme/theme';
+import { colors, fonts, radius, spacing, typography } from '../theme/theme';
 import { CATEGORIES } from '../config/store';
 import { useCurrency } from '../context/CurrencyContext';
 import { useProductFeed } from '../hooks/useProductFeed';
+import { useBrands } from '../hooks/useBrands';
+import { useQuickAdd } from '../hooks/useQuickAdd';
 import ProductCard from '../components/ProductCard';
 import FilterChips from '../components/FilterChips';
 import CurrencyPill from '../components/CurrencyPill';
@@ -22,6 +24,7 @@ export default function ShopScreen() {
   const { currency } = useCurrency();
 
   const [category, setCategory] = useState('all');
+  const [brand, setBrand] = useState('all');
   const [text, setText] = useState('');
   const [query, setQuery] = useState('');
 
@@ -31,20 +34,35 @@ export default function ShopScreen() {
     return () => clearTimeout(t);
   }, [text]);
 
-  // Home's category tiles jump here with { category, ts }. `ts` makes
-  // tapping the same tile twice still register as a new request.
+  // The empty cart's "Browse the shop" button jumps here with { category, ts };
+  // `ts` makes repeating the same request still register.
   const jumpStamp = route.params?.ts;
   useEffect(() => {
     const target = route.params?.category;
     if (target) {
       setCategory(target);
+      setBrand('all');
       setText('');
       setQuery('');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jumpStamp]);
 
-  const feed = useProductFeed({ category, query });
+  const feed = useProductFeed({ category, brand, query });
+  const { brands } = useBrands();
+  const { quickAdd, quickAddModal } = useQuickAdd();
+
+  // Same as the web: choosing a category clears the brand filter.
+  const changeCategory = useCallback((value) => {
+    setCategory(value);
+    setBrand('all');
+  }, []);
+
+  // The brand row only earns its space when there is a choice to make.
+  const brandOptions = useMemo(
+    () => (brands.length > 1 ? [{ value: 'all', label: 'All brands' }, ...brands.map((b) => ({ value: b, label: b }))] : []),
+    [brands]
+  );
 
   const openProduct = useCallback(
     (product) => navigation.navigate('ProductDetail', { id: product.id, product }),
@@ -52,8 +70,8 @@ export default function ShopScreen() {
   );
 
   const renderItem = useCallback(
-    ({ item }) => <ProductCard product={item} currency={currency} onPress={openProduct} />,
-    [currency, openProduct]
+    ({ item }) => <ProductCard product={item} currency={currency} onPress={openProduct} onAdd={quickAdd} />,
+    [currency, openProduct, quickAdd]
   );
 
   const showSkeleton = feed.status === 'loading' && feed.products.length === 0;
@@ -62,7 +80,13 @@ export default function ShopScreen() {
     <View style={[styles.flex, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <View style={styles.titleRow}>
-          <Text style={styles.title}>Shop</Text>
+          <View style={styles.brandRow}>
+            <Image source={require('../../assets/logo-mark.png')} style={styles.logo} resizeMode="contain" accessibilityLabel="Carter The Town Wear" />
+            <View>
+              <Text style={styles.eyebrow}>Full Range</Text>
+              <Text style={styles.title}>The Collection</Text>
+            </View>
+          </View>
           <CurrencyPill />
         </View>
 
@@ -88,7 +112,10 @@ export default function ShopScreen() {
           ) : null}
         </View>
 
-        <FilterChips options={CATEGORIES} activeValue={category} onChange={setCategory} style={styles.chipRow} />
+        <FilterChips options={CATEGORIES} activeValue={category} onChange={changeCategory} style={styles.chipRow} />
+        {brandOptions.length > 0 ? (
+          <FilterChips options={brandOptions} activeValue={brand} onChange={setBrand} style={styles.chipRow} />
+        ) : null}
       </View>
 
       {showSkeleton ? (
@@ -127,12 +154,13 @@ export default function ShopScreen() {
           ListEmptyComponent={
             <EmptyState
               icon={<SearchX size={26} color={colors.gold} />}
-              title={query ? 'No matches' : 'Nothing here yet'}
-              subtitle={query ? `No products match "${query}". Try another word or category.` : 'There are no products in this category right now.'}
+              title="No products found"
+              subtitle={query ? `No matches for "${query}". Try a different term.` : 'There are no products here right now. Try a different filter.'}
             />
           }
         />
       )}
+      {quickAddModal}
     </View>
   );
 }
@@ -148,7 +176,10 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.borderSubtle,
   },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  title: { fontFamily: fonts.heading, fontSize: 30, color: colors.textPrimary },
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  logo: { width: 34, height: 42 },
+  eyebrow: { ...typography.label, color: colors.gold, marginBottom: 4 },
+  title: { fontFamily: fonts.heading, fontSize: 28, color: colors.textPrimary },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',

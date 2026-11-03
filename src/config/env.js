@@ -8,7 +8,11 @@ export const SITE_ORIGIN = 'https://www.carterthetownwear.com';
 export const API_BASE_URL = `${SITE_ORIGIN}/api`;
 
 export const APP_NAME = 'Carter The Town Wear';
-export const BRAND_LABEL = 'CTW';
+
+// Name used inside WhatsApp messages. The web shop writes "Hi CarterTheTownWear!"
+// (APP_NAME in client/src/config.js), so the app does the same.
+export const SHOP_NAME = 'CarterTheTownWear';
+export const APP_TAGLINE = 'Dressed for the town.';
 
 /**
  * REQUIRED before release: the client's WhatsApp number in international

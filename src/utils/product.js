@@ -1,17 +1,18 @@
 import { parsePrice } from './currency';
-import { CATEGORY_LABELS } from '../config/store';
+import { CATEGORY_LABELS, DEFAULT_BRAND } from '../config/store';
 
 /**
  * Normalises a product from the API into what the app uses everywhere.
- * - prices become numbers (or null); `price` is a legacy mirror of the
- *   Kwacha price and is kept only so cart snapshots match the web shape
- * - `brand` is dropped on purpose: every product is sold under CTW and
- *   the UI never shows a brand field
+ * Prices become numbers (or null). `price` is the legacy Kwacha column,
+ * kept because older rows only have that one (see priceFor).
+ * `brand` is whatever the admin entered; blank falls back to CTW, as the
+ * server does.
  */
 export function normalizeProduct(raw) {
   return {
     id: raw.id,
     name: String(raw.name ?? ''),
+    brand: String(raw.brand ?? '').trim() || DEFAULT_BRAND,
     category: String(raw.category ?? '').toLowerCase(),
     description: raw.description ? String(raw.description) : '',
     image_url: raw.image_url || null,

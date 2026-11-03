@@ -7,7 +7,6 @@ import { colors, fonts, radius, spacing, typography } from '../theme/theme';
 import { getImageUrl } from '../utils/imageUrl';
 import { formatItemPrice, formatMoney, priceFor } from '../utils/currency';
 import { lineTotal, MAX_QTY, MIN_QTY } from '../utils/cart';
-import { BRAND_LABEL } from '../config/env';
 import { hapticTap, hapticWarning } from '../utils/haptics';
 import ImagePlaceholder from './ImagePlaceholder';
 
@@ -65,7 +64,9 @@ function CartLine({ item, currency, onChangeQuantity, onRemove, onOpen }) {
         <View style={styles.info}>
           <View style={styles.topRow}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.tag}>{BRAND_LABEL}</Text>
+              <Text style={styles.tag} numberOfLines={1}>
+                {item.brand}
+              </Text>
               <Text style={styles.name} numberOfLines={2}>
                 {item.name}
               </Text>
@@ -136,7 +137,7 @@ const styles = StyleSheet.create({
   tag: { ...typography.label, color: colors.gold, fontSize: 9.5, marginBottom: 2 },
   name: { fontFamily: fonts.bodyMedium, fontSize: 14, lineHeight: 19, color: colors.textPrimary },
   unit: { fontFamily: fonts.body, fontSize: 12.5, color: colors.textMuted, marginTop: 2 },
-  unitRequest: { fontFamily: fonts.body, fontSize: 12.5, color: colors.textMuted, marginTop: 2, fontStyle: 'italic' },
+  unitRequest: { fontFamily: fonts.body, fontSize: 12.5, color: colors.textMuted, marginTop: 2 },
   bottomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.sm },
   stepper: {
     flexDirection: 'row',

@@ -41,6 +41,7 @@ export const colors = {
 
 export const fonts = {
   heading: 'PlayfairDisplay_700Bold',
+  headingItalic: 'PlayfairDisplay_400Regular_Italic', // tagline only; never use fontStyle: 'italic' with these families
   body: 'DMSans_400Regular',
   bodyMedium: 'DMSans_500Medium',
   bodyBold: 'DMSans_700Bold',

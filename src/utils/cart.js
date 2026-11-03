@@ -1,10 +1,11 @@
-// Cart rules, ported from the web app's client/src/utils/cart.js as pure
-// functions (no React, no storage, no network) so they are unit-tested
-// and behave identically to the web cart. CartContext wires them to
-// AsyncStorage and the API.
+// Cart rules, ported from the web app's client/src/utils/cart.js and checked
+// against that source. Pure functions (no React, no storage, no network) so
+// they are unit-tested and behave identically to the web cart. CartContext
+// wires them to AsyncStorage and the API.
 
-import { formatMoney, priceFor, parsePrice, isCurrencyCode, PRICE_ON_REQUEST } from './currency';
+import { formatMoney, formatItemPrice, priceFor, parsePrice, isCurrencyCode, PRICE_ON_REQUEST } from './currency';
 import { categoryLabel } from './product';
+import { SHOP_NAME } from '../config/env';
 
 export const MIN_QTY = 1;
 export const MAX_QTY = 20; // per line
@@ -24,14 +25,15 @@ export function sanitizeNotes(value) {
 }
 
 /**
- * The snapshot stored per line: id, name, category, image path, the
- * three prices and the quantity. Refreshed from the API later; the
+ * The snapshot stored per line: id, name, brand, category, image path,
+ * the three prices and the quantity. Refreshed from the API later; the
  * cart never trusts it as the source of truth.
  */
 function toLine(product, quantity) {
   return {
     id: product.id,
     name: product.name,
+    brand: product.brand || null,
     category: product.category,
     image_url: product.image_url || null,
     price: parsePrice(product.price),
@@ -58,7 +60,9 @@ export function addToCart(items, product, quantity = 1) {
   return { items: [...items, toLine(product, quantity)], status: 'added' };
 }
 
+// Like the web's setQty: below 1 removes the line, above 20 clamps.
 export function setQuantity(items, id, quantity) {
+  if (Number(quantity) < MIN_QTY) return removeFromCart(items, id);
   return items.map((i) => (sameId(i.id, id) ? { ...i, quantity: clampQuantity(quantity) } : i));
 }
 
@@ -88,7 +92,8 @@ export function mergeFreshProducts(items, freshProducts) {
   return { items: next, removed };
 }
 
-export const removedNotice = (name) => `${name} is no longer available and was removed.`;
+// One notice per refresh, same wording as the web: "A, B is no longer available and was removed."
+export const removedNotice = (names) => `${[].concat(names).join(', ')} is no longer available and was removed.`;
 
 /** Total quantity across lines — what the tab badge shows. */
 export function countUnits(items) {
@@ -126,52 +131,44 @@ export function computeTotals(items, currency) {
 }
 
 /**
- * The cart message sent to the shop's WhatsApp number. Format is fixed
- * by the web shop: numbered lines, bold names, "qty x unit = line",
- * a currency-labelled total, optional notes, a closing request.
+ * The cart message sent to the shop's WhatsApp number. Identical to the
+ * web's buildCartMessage: numbered lines with bold name and (brand),
+ * "qty x unit = line", a currency-labelled total (always present, with
+ * " + items on request" when some lines have no price), optional notes,
+ * and the closing request.
  */
-export function buildOrderMessage({ items, currency, notes }) {
+export function buildOrderMessage({ items, currency, notes, shopName = SHOP_NAME }) {
   const code = isCurrencyCode(currency) ? currency : 'ZAR';
   const lines = items.map((item, index) => {
     const unit = priceFor(item, code);
-    const pricing =
+    const detail =
       unit === null
         ? `${item.quantity} x ${PRICE_ON_REQUEST}`
         : `${item.quantity} x ${formatMoney(unit, code)} = ${formatMoney(lineTotal(item, code), code)}`;
-    return `${index + 1}. *${item.name}*\n   ${pricing}`;
+    return `${index + 1}. *${item.name}*${item.brand ? ` (${item.brand})` : ''}\n   ${detail}`;
   });
 
-  const { total, pricedLines, onRequestLines } = computeTotals(items, code);
-  const parts = ["Hi CTW! I'd like to order:", '', lines.join('\n')];
+  const { total, onRequestLines } = computeTotals(items, code);
+  const out = [`Hi ${shopName}! I'd like to order:`, '', ...lines, ''];
+  out.push(`Total (${code}): ${formatMoney(total, code)}${onRequestLines ? ' + items on request' : ''}`);
 
-  if (pricedLines > 0) {
-    parts.push('', `Total (${code}): ${formatMoney(total, code)}`);
-  }
-  if (onRequestLines > 0) {
-    const note = `${onRequestLines} item${onRequestLines === 1 ? '' : 's'} priced on request, not included in the total.`;
-    // Sits directly under the total when there is one, otherwise stands alone.
-    parts.push(...(pricedLines > 0 ? [note] : ['', note]));
-  }
+  const cleanNotes = String(notes ?? '').trim().slice(0, MAX_NOTES_LENGTH);
+  if (cleanNotes) out.push('', `Notes: ${cleanNotes}`);
 
-  const cleanNotes = sanitizeNotes(notes).trim();
-  if (cleanNotes) parts.push('', `Notes: ${cleanNotes}`);
-
-  parts.push('', 'Please confirm availability and how to pay.');
-  return parts.join('\n');
+  out.push('', 'Please confirm availability and how to pay.');
+  return out.join('\n');
 }
 
-/** The shorter message from a single product's "Order via WhatsApp" button. */
-export function buildProductMessage(product, currency) {
+/** The message from a single product's "Order on WhatsApp" button (web: ProductModal). */
+export function buildProductMessage(product, currency, shopName = SHOP_NAME) {
   const code = isCurrencyCode(currency) ? currency : 'ZAR';
-  const price = priceFor(product, code);
-  return [
-    "Hi CTW! I'm interested in:",
-    '',
-    `*${product.name}* (${categoryLabel(product.category)})`,
-    `Price (${code}): ${price === null ? PRICE_ON_REQUEST.toLowerCase() : formatMoney(price, code)}`,
-    '',
-    'Please confirm availability.',
-  ].join('\n');
+  return (
+    `Hi ${shopName}! I'm interested in purchasing:\n\n` +
+    `*${product.name}* by ${product.brand}\n` +
+    `Category: ${categoryLabel(product.category)}\n` +
+    `Price: ${formatItemPrice(product, code)}\n\n` +
+    'Please let me know availability and how to proceed.'
+  );
 }
 
 /**

@@ -23,4 +23,8 @@ export const CATEGORY_LABELS = {
 
 export const DEFAULT_CURRENCY = 'ZAR';
 
+// The shop's own label. The admin can enter any brand per product; a blank
+// brand is stored as CTW by the server, and the app falls back to it too.
+export const DEFAULT_BRAND = 'CTW';
+
 export const PAGE_SIZE = 12;

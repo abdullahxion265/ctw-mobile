@@ -1,0 +1,12 @@
+node_modules/
+.expo/
+dist/
+*.log
+*.apk
+*.aab
+android/.gradle/
+android/build/
+android/app/build/
+android/app/.cxx/
+android/.idea/
+android/local.properties

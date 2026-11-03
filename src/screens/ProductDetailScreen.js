@@ -15,7 +15,6 @@ import { priceFor, formatItemPrice } from '../utils/currency';
 import { categoryLabel } from '../utils/product';
 import { buildProductMessage, MAX_QTY, MAX_LINES } from '../utils/cart';
 import { hapticSuccess, hapticWarning } from '../utils/haptics';
-import { BRAND_LABEL } from '../config/env';
 import ImagePlaceholder from '../components/ImagePlaceholder';
 import CurrencyPill from '../components/CurrencyPill';
 import PrimaryButton from '../components/PrimaryButton';
@@ -155,7 +154,7 @@ export default function ProductDetailScreen() {
         </View>
 
         <View style={styles.content}>
-          <Text style={styles.tag}>{BRAND_LABEL}</Text>
+          <Text style={styles.tag}>{product.brand}</Text>
           <Text style={styles.name}>{product.name}</Text>
 
           <View style={styles.metaRow}>

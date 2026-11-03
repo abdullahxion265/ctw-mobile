@@ -17,7 +17,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0D0D0D"
+        "backgroundColor": "#0F294D"
       },
       "package": "com.carterthetownwear.app",
       "edgeToEdgeEnabled": true
@@ -32,6 +32,12 @@
           "backgroundColor": "#0D0D0D"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "bd7fa8cd-8b19-4c86-87e4-d90c972d24b8"
+      }
+    },
+    "owner": "subsaharandev265"
   }
 }

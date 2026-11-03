@@ -8,6 +8,7 @@ import { useFonts } from 'expo-font';
 // Import each weight from its own path. The package root re-exports every
 // weight and italic, and Metro would then bundle all of them (~10 MB).
 import { PlayfairDisplay_700Bold } from '@expo-google-fonts/playfair-display/700Bold';
+import { PlayfairDisplay_400Regular_Italic } from '@expo-google-fonts/playfair-display/400Regular_Italic';
 import { DMSans_400Regular } from '@expo-google-fonts/dm-sans/400Regular';
 import { DMSans_500Medium } from '@expo-google-fonts/dm-sans/500Medium';
 import { DMSans_700Bold } from '@expo-google-fonts/dm-sans/700Bold';
@@ -61,6 +62,7 @@ function AppContent() {
 export default function App() {
   const [fontsLoaded, fontError] = useFonts({
     PlayfairDisplay_700Bold,
+    PlayfairDisplay_400Regular_Italic,
     DMSans_400Regular,
     DMSans_500Medium,
     DMSans_700Bold,
