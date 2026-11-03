@@ -1,21 +1,24 @@
 import { parsePrice } from './currency';
 import { CATEGORY_LABELS, DEFAULT_BRAND } from '../config/store';
+import { photosOf } from './photos';
 
 /**
  * Normalises a product from the API into what the app uses everywhere.
  * Prices become numbers (or null). `price` is the legacy Kwacha column,
  * kept because older rows only have that one (see priceFor).
  * `brand` is whatever the admin entered; blank falls back to CTW, as the
- * server does.
+ * server does. `images` is the ordered photo list (up to 4, first = main).
  */
 export function normalizeProduct(raw) {
+  const photos = photosOf(raw);
   return {
     id: raw.id,
     name: String(raw.name ?? ''),
     brand: String(raw.brand ?? '').trim() || DEFAULT_BRAND,
     category: String(raw.category ?? '').toLowerCase(),
     description: raw.description ? String(raw.description) : '',
-    image_url: raw.image_url || null,
+    image_url: raw.image_url || photos[0] || null,
+    images: photos,
     price: parsePrice(raw.price),
     price_mwk: parsePrice(raw.price_mwk),
     price_zar: parsePrice(raw.price_zar),

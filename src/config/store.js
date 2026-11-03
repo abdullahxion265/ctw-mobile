@@ -28,3 +28,20 @@ export const DEFAULT_CURRENCY = 'ZAR';
 export const DEFAULT_BRAND = 'CTW';
 
 export const PAGE_SIZE = 12;
+
+export const MAX_PHOTOS = 4;
+
+// Same accounts and wording as the web shop (client/src/config.js). Change a link here and rebuild.
+// The Facebook link is a post link on the web too; swap in the page link when the client has it.
+export const SOCIAL_LINKS = [
+  { id: 'instagram', label: 'Instagram', sub: '@carter_the_town_wear_', url: 'https://www.instagram.com/carter_the_town_wear_/' },
+  { id: 'tiktok',    label: 'TikTok',    sub: 'Watch our videos',       url: 'https://vt.tiktok.com/ZSgK4jeyJ/' },
+  { id: 'facebook',  label: 'Facebook',  sub: 'Follow on Facebook',     url: 'https://www.facebook.com/100087507815896/posts/1076516918608559/' },
+  { id: 'threads',   label: 'Threads',   sub: '@carter_the_town_wear_', url: 'https://www.threads.com/@carter_the_town_wear_' },
+];
+
+// Shown next to ordering (product screen, cart, More). No fees or areas are promised.
+export const DELIVERY = {
+  title: 'Delivery available',
+  note: 'Tell us your area when you order and we will arrange delivery.',
+};

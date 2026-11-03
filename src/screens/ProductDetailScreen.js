@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, Dimensions, TouchableOpacity } from 'react-native';
-import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,12 +9,13 @@ import { fetchProduct } from '../api/products';
 import { useCart } from '../context/CartContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { useWhatsApp } from '../hooks/useWhatsApp';
-import { getImageUrl } from '../utils/imageUrl';
+import { photosOf } from '../utils/photos';
 import { priceFor, formatItemPrice } from '../utils/currency';
 import { categoryLabel } from '../utils/product';
 import { buildProductMessage, MAX_QTY, MAX_LINES } from '../utils/cart';
 import { hapticSuccess, hapticWarning } from '../utils/haptics';
-import ImagePlaceholder from '../components/ImagePlaceholder';
+import PhotoGallery from '../components/PhotoGallery';
+import DeliveryNote from '../components/DeliveryNote';
 import CurrencyPill from '../components/CurrencyPill';
 import PrimaryButton from '../components/PrimaryButton';
 import OutlineButton from '../components/OutlineButton';
@@ -135,7 +135,7 @@ export default function ProductDetailScreen() {
     );
   }
 
-  const uri = getImageUrl(product.image_url);
+  const photos = photosOf(product);
   const price = formatItemPrice(product, currency);
   const onRequest = priceFor(product, currency) === null;
   const inCart = items.find((i) => String(i.id) === String(product.id));
@@ -144,11 +144,7 @@ export default function ProductDetailScreen() {
     <View style={styles.flex}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 190 + insets.bottom }}>
         <View style={styles.imageWrap}>
-          {uri ? (
-            <Image source={{ uri }} style={styles.image} contentFit="cover" transition={250} cachePolicy="memory-disk" />
-          ) : (
-            <ImagePlaceholder style={styles.image} />
-          )}
+          <PhotoGallery photos={photos} width={SCREEN_WIDTH} height={IMAGE_HEIGHT} label={product.name} />
           <LinearGradient colors={['rgba(0,0,0,0.55)', 'transparent']} style={styles.topShade} pointerEvents="none" />
           <LinearGradient colors={['transparent', colors.bg]} style={styles.bottomShade} pointerEvents="none" />
         </View>
@@ -180,6 +176,8 @@ export default function ProductDetailScreen() {
               Orders are agreed on WhatsApp. We confirm availability and how to pay in the chat.
             </Text>
           </View>
+
+          <DeliveryNote style={{ marginTop: spacing.md }} />
         </View>
       </ScrollView>
 
@@ -225,7 +223,6 @@ export default function ProductDetailScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.bg },
   imageWrap: { width: SCREEN_WIDTH, height: IMAGE_HEIGHT, backgroundColor: colors.surface },
-  image: { width: '100%', height: '100%' },
   topShade: { position: 'absolute', top: 0, left: 0, right: 0, height: 120 },
   bottomShade: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 140 },
   topBar: {

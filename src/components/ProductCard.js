@@ -4,6 +4,7 @@ import { Image } from 'expo-image';
 import { Plus, Check } from 'lucide-react-native';
 import { colors, fonts, radius, spacing, typography } from '../theme/theme';
 import { getImageUrl } from '../utils/imageUrl';
+import { photosOf } from '../utils/photos';
 import { priceFor, formatItemPrice } from '../utils/currency';
 import ImagePlaceholder from './ImagePlaceholder';
 
@@ -21,7 +22,8 @@ function ProductCard({ product, currency, onPress, onAdd, width = CARD_WIDTH, st
   const timer = useRef(null);
   useEffect(() => () => clearTimeout(timer.current), []);
 
-  const uri = getImageUrl(product.image_url);
+  const photoCount = photosOf(product).length;
+  const uri = getImageUrl(photosOf(product)[0] || product.image_url);
   const price = formatItemPrice(product, currency);
   const onRequest = priceFor(product, currency) === null;
 
@@ -47,6 +49,11 @@ function ProductCard({ product, currency, onPress, onAdd, width = CARD_WIDTH, st
         ) : (
           <ImagePlaceholder style={styles.image} />
         )}
+        {photoCount > 1 ? (
+          <View style={styles.photoBadge} pointerEvents="none">
+            <Text style={styles.photoBadgeText}>{photoCount} photos</Text>
+          </View>
+        ) : null}
       </View>
       <View style={styles.body}>
         <Text style={styles.brand} numberOfLines={1}>
@@ -90,6 +97,18 @@ const styles = StyleSheet.create({
   },
   imageWrap: { width: '100%', aspectRatio: 4 / 5, backgroundColor: colors.surfaceRaised },
   image: { width: '100%', height: '100%' },
+  photoBadge: {
+    position: 'absolute',
+    top: spacing.sm,
+    right: spacing.sm,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: radius.full,
+    backgroundColor: 'rgba(13,13,13,0.8)',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  photoBadgeText: { fontFamily: fonts.mono, fontSize: 9, letterSpacing: 0.8, color: colors.textPrimary },
   body: { padding: spacing.md, gap: 3 },
   brand: { ...typography.label, color: colors.gold, fontSize: 9.5 },
   name: { fontFamily: fonts.bodyMedium, fontSize: 13.5, lineHeight: 18, color: colors.textPrimary, minHeight: 36 },

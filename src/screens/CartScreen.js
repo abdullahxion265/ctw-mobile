@@ -25,6 +25,7 @@ import EmptyState from '../components/EmptyState';
 import PrimaryButton from '../components/PrimaryButton';
 import OutlineButton from '../components/OutlineButton';
 import ConfirmModal from '../components/ConfirmModal';
+import DeliveryNote from '../components/DeliveryNote';
 
 export default function CartScreen() {
   const navigation = useNavigation();
@@ -124,19 +125,20 @@ export default function CartScreen() {
               ListHeaderComponent={renderNotices()}
               ListFooterComponent={
                 <View style={styles.notesBlock}>
-                  <Text style={styles.notesLabel}>Sizes, colours or notes</Text>
+                  <DeliveryNote style={{ marginBottom: spacing.lg }} />
+                  <Text style={styles.notesLabel}>Sizes, colours, delivery area or notes</Text>
                   <TextInput
                     style={styles.notesInput}
                     value={notes}
                     onChangeText={setNotes}
                     onFocus={() => setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 250)}
-                    placeholder="e.g. Hoodie: L, black. Shoes: size 9"
+                    placeholder="e.g. Hoodie: L, black. Deliver to: your area"
                     placeholderTextColor={colors.textMuted}
                     multiline
                     maxLength={MAX_NOTES_LENGTH}
                     textAlignVertical="top"
                     selectionColor={colors.gold}
-                    accessibilityLabel="Sizes, colours or notes"
+                    accessibilityLabel="Sizes, colours, delivery area or notes"
                   />
                   <Text style={styles.notesCount}>
                     {notes.length}/{MAX_NOTES_LENGTH}

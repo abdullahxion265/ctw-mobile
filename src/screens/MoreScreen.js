@@ -1,10 +1,14 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
-import { MessageCircle, Globe, Coins, ChevronRight } from 'lucide-react-native';
+import { MessageCircle, Globe, Coins, ChevronRight, ArrowUpRight, Truck } from 'lucide-react-native';
 import { colors, fonts, radius, spacing, typography } from '../theme/theme';
 import { useCurrency } from '../context/CurrencyContext';
 import { useWhatsApp } from '../hooks/useWhatsApp';
+import { useState } from 'react';
+import ConfirmModal from '../components/ConfirmModal';
+import SocialIcon from '../components/SocialIcon';
+import { SOCIAL_LINKS, DELIVERY } from '../config/store';
 import { CURRENCIES } from '../utils/currency';
 import { hapticSelect } from '../utils/haptics';
 import { SITE_ORIGIN, APP_NAME, SHOP_NAME } from '../config/env';
@@ -34,6 +38,12 @@ export default function MoreScreen() {
   const { sendWhatsApp, whatsappModal } = useWhatsApp();
   const { name, symbol } = CURRENCIES[currency];
   const version = Constants.expoConfig?.version;
+  const [linkProblem, setLinkProblem] = useState(false);
+
+  const openLink = (url) => {
+    hapticSelect();
+    Linking.openURL(url).catch(() => setLinkProblem(true));
+  };
 
   return (
     <ScrollView
@@ -63,6 +73,57 @@ export default function MoreScreen() {
       </View>
 
       <View style={styles.section}>
+        <Text style={styles.sectionLabel}>Ordering</Text>
+        <View style={styles.card}>
+          <View style={[styles.fact, styles.rowBorder]}>
+            <View style={styles.rowIcon}>
+              <Truck size={19} color={colors.gold} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.rowTitle}>{DELIVERY.title}</Text>
+              <Text style={styles.rowSub}>{DELIVERY.note}</Text>
+            </View>
+          </View>
+          <View style={styles.fact}>
+            <View style={styles.rowIcon}>
+              <MessageCircle size={19} color={colors.gold} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.rowTitle}>Order on WhatsApp</Text>
+              <Text style={styles.rowSub}>Pick your items, send one message, and we confirm stock and payment with you.</Text>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>Follow Us</Text>
+        <View style={styles.card}>
+          {SOCIAL_LINKS.map((s, i) => (
+            <TouchableOpacity
+              key={s.id}
+              style={[styles.row, i < SOCIAL_LINKS.length - 1 && styles.rowBorder]}
+              onPress={() => openLink(s.url)}
+              activeOpacity={0.75}
+              accessibilityRole="link"
+              accessibilityLabel={`${s.label}: ${s.sub}`}
+            >
+              <View style={styles.rowIcon}>
+                <SocialIcon id={s.id} size={19} color={colors.gold} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.rowTitle}>{s.label}</Text>
+                <Text style={styles.rowSub} numberOfLines={1}>
+                  {s.sub}
+                </Text>
+              </View>
+              <ArrowUpRight size={18} color={colors.textMuted} />
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      <View style={styles.section}>
         <Text style={styles.sectionLabel}>Contact</Text>
         <View style={styles.card}>
           <Row
@@ -76,7 +137,7 @@ export default function MoreScreen() {
             icon={<Globe size={19} color={colors.gold} />}
             title="Visit the website"
             subtitle={SITE_ORIGIN.replace('https://', '')}
-            onPress={() => Linking.openURL(SITE_ORIGIN).catch(() => {})}
+            onPress={() => openLink(SITE_ORIGIN)}
           />
         </View>
       </View>
@@ -97,6 +158,16 @@ export default function MoreScreen() {
 
       {version ? <Text style={styles.version}>Version {version}</Text> : null}
       {whatsappModal}
+      <ConfirmModal
+        visible={linkProblem}
+        title="Couldn't open the link"
+        message="Check your connection and try again."
+        confirmLabel="OK"
+        danger={false}
+        single
+        onConfirm={() => setLinkProblem(false)}
+        onCancel={() => setLinkProblem(false)}
+      />
     </ScrollView>
   );
 }
@@ -110,6 +181,7 @@ const styles = StyleSheet.create({
   sectionLabel: { ...typography.label, color: colors.gold, marginBottom: spacing.sm, marginLeft: 4 },
   card: { backgroundColor: colors.surface, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.lg },
+  fact: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md, padding: spacing.lg },
   rowBorder: { borderBottomWidth: 1, borderBottomColor: colors.borderSubtle },
   rowIcon: {
     width: 40,

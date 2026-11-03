@@ -44,9 +44,9 @@ over HTTPS and native apps ignore CORS.
 
 | Tab | What it does |
 | --- | --- |
-| Shop | Category chips, search, two-column grid, infinite scroll, pull to refresh, skeleton loaders |
-| Cart | Swipe to delete, quantity steppers, note box that rises with the keyboard, pinned total and WhatsApp button |
-| More | Currency, WhatsApp chat, website, about |
+| Shop | Category and brand filters, search, two-column grid, quick add, infinite scroll, pull to refresh, skeleton loaders |
+| Cart | Swipe to delete, quantity steppers, delivery note, notes box that rises with the keyboard, pinned total and WhatsApp button |
+| More | Currency, delivery and ordering facts, Follow Us (Instagram, TikTok, Facebook, Threads), WhatsApp chat, website, about |
 
 Product detail opens full screen over the tabs (native push, swipe back on
 iOS) with a sticky bar: Add to cart, Order on WhatsApp. The currency
@@ -128,6 +128,22 @@ package root would pull in every weight and italic, about 10 MB more).
 `fontWeight` style: each weight is a separate font file, and Android
 resolves a family plus weight pair to the wrong file. Pick the right
 family from `fonts` in `theme.js` instead.
+
+---
+
+## Photos, delivery and social links (from the web)
+
+- **Photos:** a product can have up to 4. The API returns them as `images` (first = main) and still
+  returns `image_url`; `src/utils/photos.js` handles both. Cards show the main photo and an "N photos"
+  pill; the product screen has a swipeable gallery with thumbnails. A photo that fails to load shows the
+  CTW placeholder for that photo only.
+- **Delivery:** "Delivery available" appears on the product screen, in the cart (above the notes box,
+  whose label now invites a delivery area) and on More. No fees or areas are promised, same as the web.
+- **Follow Us:** More lists the four accounts. The links and the delivery wording live in
+  `src/config/store.js` (`SOCIAL_LINKS`, `DELIVERY`) and match the web's `config.js`; change both places
+  when a link changes. The Facebook link is a post link on the web too; swap in the page link when the client has it.
+- Photos need the web release with migration `003_product_images.sql` on the server. Without it the API
+  falls back to one photo per product and the app still works.
 
 ---
 
@@ -223,7 +239,7 @@ set the real app name and package id.
 
 ## What was verified, and what was not
 
-- `npm test`: 37 unit tests pass (cart limits and refresh, totals, exact WhatsApp messages with
+- `npm test`: 43 unit tests pass (photo lists, cart limits and refresh, totals, exact WhatsApp messages with
   brands, price rules including 0.00 and the legacy Kwacha fallback, stored-cart recovery).
 - `expo export` bundles for Android and iOS.
 - A full-app render test (not shipped; needs `jest-expo`) ran the real app against a mocked API
