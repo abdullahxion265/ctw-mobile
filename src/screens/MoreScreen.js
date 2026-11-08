@@ -1,14 +1,14 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
-import { MessageCircle, Globe, Coins, ChevronRight, ArrowUpRight, Truck } from 'lucide-react-native';
+import { MessageCircle, Globe, Coins, ChevronRight, ArrowUpRight, Truck, Mail } from 'lucide-react-native';
 import { colors, fonts, radius, spacing, typography } from '../theme/theme';
 import { useCurrency } from '../context/CurrencyContext';
 import { useWhatsApp } from '../hooks/useWhatsApp';
 import { useState } from 'react';
 import ConfirmModal from '../components/ConfirmModal';
 import SocialIcon from '../components/SocialIcon';
-import { SOCIAL_LINKS, DELIVERY } from '../config/store';
+import { SOCIAL_LINKS, DELIVERY, CONTACT_EMAIL } from '../config/store';
 import { CURRENCIES } from '../utils/currency';
 import { hapticSelect } from '../utils/haptics';
 import { SITE_ORIGIN, APP_NAME, SHOP_NAME } from '../config/env';
@@ -84,13 +84,26 @@ export default function MoreScreen() {
               <Text style={styles.rowSub}>{DELIVERY.note}</Text>
             </View>
           </View>
-          <View style={styles.fact}>
+          <View style={[styles.fact, styles.rowBorder]}>
             <View style={styles.rowIcon}>
               <MessageCircle size={19} color={colors.gold} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.rowTitle}>Order on WhatsApp</Text>
               <Text style={styles.rowSub}>Pick your items, send one message, and we confirm stock and payment with you.</Text>
+            </View>
+          </View>
+          <View style={styles.fact}>
+            <View style={styles.rowIcon}>
+              <Mail size={19} color={colors.gold} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.rowTitle}>Questions? Email us</Text>
+              <Text style={styles.rowSub}>For enquiries about orders, sizes or anything else.</Text>
+              {/* Plain text on purpose, like the web; selectable so it can be copied. */}
+              <Text style={styles.email} selectable>
+                {CONTACT_EMAIL}
+              </Text>
             </View>
           </View>
         </View>
@@ -194,6 +207,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   rowTitle: { fontFamily: fonts.bodyBold, fontSize: 14.5, color: colors.textPrimary },
+  email: { fontFamily: fonts.bodyMedium, fontSize: 13.5, color: colors.textPrimary, marginTop: 6 },
   rowSub: { fontFamily: fonts.body, fontSize: 12.5, color: colors.textMuted, marginTop: 2 },
   aboutCard: { padding: spacing.lg, gap: spacing.md },
   aboutText: { fontFamily: fonts.body, fontSize: 13.5, lineHeight: 21, color: colors.textSecondary },

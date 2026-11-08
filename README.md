@@ -46,7 +46,7 @@ over HTTPS and native apps ignore CORS.
 | --- | --- |
 | Shop | Category and brand filters, search, two-column grid, quick add, infinite scroll, pull to refresh, skeleton loaders |
 | Cart | Swipe to delete, quantity steppers, delivery note, notes box that rises with the keyboard, pinned total and WhatsApp button |
-| More | Currency, delivery and ordering facts, Follow Us (Instagram, TikTok, Facebook, Threads), WhatsApp chat, website, about |
+| More | Currency, delivery and ordering facts, Follow Us (Instagram, TikTok, Facebook, Threads), contact email, WhatsApp chat, website, about |
 
 Product detail opens full screen over the tabs (native push, swipe back on
 iOS) with a sticky bar: Add to cart, Order on WhatsApp. The currency
@@ -165,7 +165,7 @@ If you ever re-generate `android/` with `npx expo prebuild --clean`, it will reb
 
 ## Still assumptions
 
-1. **App name and ids.** "Carter The Town Wear", `com.carterthetownwear.app`. The Android package id
+1. **App name and ids.** The launcher name is "CTW" (`app.json` and `android/app/src/main/res/values/strings.xml`), package `com.carterthetownwear.app`. The Android package id
    cannot change after a Play release.
 2. **Search is client-side.** The server still has no `?q=`, so a search loads the whole catalogue
    (50 per request, cached 5 minutes) and filters by name, brand, description and category.
