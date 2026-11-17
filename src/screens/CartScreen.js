@@ -126,19 +126,19 @@ export default function CartScreen() {
               ListFooterComponent={
                 <View style={styles.notesBlock}>
                   <DeliveryNote style={{ marginBottom: spacing.lg }} />
-                  <Text style={styles.notesLabel}>Sizes, colours, delivery area or notes</Text>
+                  <Text style={styles.notesLabel}>Sizes, colours, delivery location or notes</Text>
                   <TextInput
                     style={styles.notesInput}
                     value={notes}
                     onChangeText={setNotes}
                     onFocus={() => setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 250)}
-                    placeholder="e.g. Hoodie: L, black. Deliver to: your area"
+                    placeholder="e.g. Hoodie: L, black. Deliver to: your location"
                     placeholderTextColor={colors.textMuted}
                     multiline
                     maxLength={MAX_NOTES_LENGTH}
                     textAlignVertical="top"
                     selectionColor={colors.gold}
-                    accessibilityLabel="Sizes, colours, delivery area or notes"
+                    accessibilityLabel="Sizes, colours, delivery location or notes"
                   />
                   <Text style={styles.notesCount}>
                     {notes.length}/{MAX_NOTES_LENGTH}
